@@ -1,0 +1,9 @@
+name: charbert
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.6
+  - pytorch=1.2
+  - transformers=2.4.0
