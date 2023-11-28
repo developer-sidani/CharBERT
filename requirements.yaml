@@ -6,4 +6,5 @@ channels:
 dependencies:
   - python=3.6
   - pytorch=1.2
-  - transformers=2.4.0
+  - pip:
+    - transformers==v2.4.0
