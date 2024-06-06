@@ -611,13 +611,13 @@ def eval_hit_metrics(args, pred_scores, labels):
             #nbest_words = tokenizer.convert_ids_to_tokens(nbest_words_idx)
             #true_token = true_words[seq_idx]
             true_id = true_word_ids[seq_idx]
-            #if args.output_debug:
-            if True:
+            if args.output_debug:
+            #if True:
                 print(f"True_id: {true_id}")
                 print(f"Nbest pos ids: {' '.join(map(str, nbest_words_idx))}")
                 print(f"Nbest scores: {nbest_scores}")
                 #print(f"Nbest wordid: {nbest_words_idx}")
-                #calculate the matrics
+                #calculate the metrics
                 if true_id == nbest_words_idx[0]:
                     p_at_1  += 1
                     p_at_5  += 1
@@ -628,6 +628,14 @@ def eval_hit_metrics(args, pred_scores, labels):
                 else:
                     print(f"Fail to predict")
                 print("")
+                token_idx_score = []
+            else:
+                 #calculate the metrics
+                if true_id == nbest_words_idx[0]:
+                    p_at_1  += 1
+                    p_at_5  += 1
+                elif true_id in nbest_words_idx:
+                    p_at_5  += 1
                 token_idx_score = []
     
     return p_at_1, p_at_5, simple_mask_num
@@ -933,4 +941,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()``

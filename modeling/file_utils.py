@@ -23,6 +23,9 @@ from botocore.exceptions import ClientError
 import requests
 from tqdm.auto import tqdm
 from contextlib import contextmanager
+import transformers
+import nltk
+nltk.download('punkt')
 #from . import __version__
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -270,7 +273,7 @@ def s3_get(url, temp_file, proxies=None):
 
 
 def http_get(url, temp_file, proxies=None, resume_size=0, user_agent=None):
-    ua = "transformers/{}; python/{}".format(__version__, sys.version.split()[0])
+    ua = "transformers/{}; python/{}".format(transformers.__version__, sys.version.split()[0])
     if isinstance(user_agent, dict):
         ua += "; " + "; ".join(
             "{}/{}".format(k, v) for k, v in user_agent.items()
