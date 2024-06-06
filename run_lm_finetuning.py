@@ -20,7 +20,7 @@ using a masked language modeling (MLM) loss.
 """
 
 from __future__ import absolute_import, division, print_function
-
+import wandb
 import argparse
 import glob
 import logging
@@ -64,6 +64,8 @@ from modeling.configuration_bert import BertConfig
 from modeling.configuration_roberta import RobertaConfig
 
 logger = logging.getLogger(__name__)
+
+
 
 MODEL_CLASSES = {
     'bert': (BertConfig, CharBertForMaskedLM, BertTokenizer),
@@ -716,7 +718,11 @@ def evaluate(args, model, tokenizer, prefix=""):
 
 def main():
     parser = argparse.ArgumentParser()
-
+    ## Wandb parameters
+    parser.add_argument('--wandb_key', type=str, default='', help='wandb key')
+    parser.add_argument('--wandb_project', type=str, default='charBert', help='wandb project')
+    parser.add_argument('--wandb_run_name', type=str, default='charBert', help='wandb run name')
+    
     ## Required parameters
     parser.add_argument("--train_data_file", default=None, type=str, required=True,
                         help="The input training data file (a text file).")
@@ -820,6 +826,12 @@ def main():
     parser.add_argument('--server_port', type=str, default='', help="For distant debugging.")
     args = parser.parse_args()
 
+    if args.wandb_key:
+        wandb.login(key=args.wandb_key)
+        wandb.init(project=args.wandb_project, name=args.wandb_run_name, entity='developer-sidani')
+        
+    else:
+        print("No wandb key provided")
     if args.model_type in ["bert", "roberta", "distilbert", "camembert"] and not args.mlm:
         raise ValueError("BERT and RoBERTa do not have LM heads but masked LM heads. They must be run using the --mlm "
                          "flag (masked language modeling).")
@@ -877,6 +889,10 @@ def main():
                                         config=config,
                                         cache_dir=args.cache_dir if args.cache_dir else None)
     model.to(args.device)
+    
+    if args.wandb_key:
+        wandb.watch(model)
+
 
     if args.local_rank == 0:
         torch.distributed.barrier()  # End of barrier to make sure only the first process in distributed training download model & vocab
@@ -894,7 +910,10 @@ def main():
             torch.distributed.barrier()
 
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
+        if args.wandb_key:
+            wandb.log({'global_step': global_step, 'loss': tr_loss})
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
+
 
 
     # Saving best-practices: if you use save_pretrained for the model and tokenizer, you can reload them using from_pretrained()
@@ -941,4 +960,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()``
+    main()
