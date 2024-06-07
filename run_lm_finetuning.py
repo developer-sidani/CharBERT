@@ -516,6 +516,8 @@ def train(args, train_dataset, model, tokenizer):
             if args.output_debug:
                 print(f'mask_lm loss: {outputs[0]}')
                 print(f'adv_term loss: {outputs[1]}')
+            if args.wandb_key:
+                wandb.log({"mask_lm_loss": outputs[0].item(), "adv_term_loss": outputs[1].item(), "total_loss": outputs[0].item() + outputs[1].item(), "global_step": global_step})
             loss = outputs[0] + outputs[1] # model outputs are always tuple in transformers (see doc)
 
             if args.n_gpu > 1:
