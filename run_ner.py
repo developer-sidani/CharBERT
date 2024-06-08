@@ -19,6 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import argparse
 import glob
+import wandb
 import logging
 import os
 import random
@@ -338,7 +339,11 @@ def main():
                         help="The output directory where the model predictions and checkpoints will be written.")
     parser.add_argument("--char_vocab", default='./data/dict/bert_char_vocab', type=str, required=True,
                         help="path for character vocab file")
+    ## Wandb parameters
 
+    parser.add_argument('--wandb_key', type=str, default='', help='wandb key')
+    parser.add_argument('--wandb_project', type=str, default='charBert', help='wandb project')
+    parser.add_argument('--wandb_run_name', type=str, default='charBert', help='wandb run name')
     ## Other parameters
     parser.add_argument("--labels", default="", type=str,
                         help="Path to a file containing all labels. If not specified, CoNLL-2003 labels are used.")
@@ -443,7 +448,11 @@ def main():
 
     # Set seed
     set_seed(args)
-
+    if args.wandb_key:
+        wandb.login(key=args.wandb_key)
+        wandb.init(project=args.wandb_project, name=args.wandb_run_name, entity='developer-sidani')
+    else:
+        print("No wandb key provided")
     # Prepare CONLL-2003 task
     labels = get_labels(args.labels)
     #print(f"the num_labels after get_labels: {len(labels)}")
@@ -474,6 +483,8 @@ def main():
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
     model.to(args.device)
+    if args.wandb_key:
+        wandb.watch(model)
 
     logger.info("Training/evaluation parameters %s", args)
 
@@ -482,6 +493,7 @@ def main():
         train_dataset = load_and_cache_examples(args, tokenizer, labels, pad_token_label_id, mode="train")
         global_step, tr_loss = train(args, train_dataset, model, tokenizer, labels, pad_token_label_id)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
+        wandb.log({"global_step": global_step, "average_loss": tr_loss})
 
     # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
