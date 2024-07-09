@@ -446,7 +446,7 @@ def main():
     # Set seed
     set_seed(args)
     wandb.login(key='13f6c62827c13afef515dd313fe5c67b1c1e1c65')
-    wandb.init(project='CharBERT', name=f'ner_{args.output_dir.replace('/content/drive/MyDrive/NLP/output/','')}_{args.model_name_or_path.replace('/content/drive/MyDrive/NLP/output/','')}', entity='developer-sidani')
+    wandb.init(project='CharBERT', name=f"ner_{args.output_dir.replace('/content/drive/MyDrive/NLP/output/','')}_{args.model_name_or_path.replace('/content/drive/MyDrive/NLP/output/','')}", entity='developer-sidani')
     
     # Prepare CONLL-2003 task
     labels = get_labels(args.labels)
