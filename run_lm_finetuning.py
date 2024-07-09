@@ -516,8 +516,7 @@ def train(args, train_dataset, model, tokenizer):
             if args.output_debug:
                 print(f'mask_lm loss: {outputs[0]}')
                 print(f'adv_term loss: {outputs[1]}')
-            if args.wandb_key:
-                wandb.log({"mask_lm_loss": outputs[0].item(), "adv_term_loss": outputs[1].item(), "total_loss": outputs[0].item() + outputs[1].item(), "global_step": global_step})
+            wandb.log({"mask_lm_loss": outputs[0].item(), "adv_term_loss": outputs[1].item(), "total_loss": outputs[0].item() + outputs[1].item(), "global_step": global_step})
             loss = outputs[0] + outputs[1] # model outputs are always tuple in transformers (see doc)
 
             if args.n_gpu > 1:
@@ -707,7 +706,7 @@ def evaluate(args, model, tokenizer, prefix=""):
         "adv_hit_at_5": adv_hit_5,
         "adv_all_num": adv_num_all
     }
-
+    wandb.log({"adv_hit_at_1": adv_hit_1, "adv_hit_at_5": adv_hit_5, "adv_all_num": adv_num_all})
     output_eval_file = os.path.join(eval_output_dir, prefix, "eval_results.txt")
     with open(output_eval_file, "w") as writer:
         logger.info("***** Eval results {} *****".format(prefix))
@@ -720,10 +719,6 @@ def evaluate(args, model, tokenizer, prefix=""):
 
 def main():
     parser = argparse.ArgumentParser()
-    ## Wandb parameters
-    parser.add_argument('--wandb_key', type=str, default='', help='wandb key')
-    parser.add_argument('--wandb_project', type=str, default='charBert', help='wandb project')
-    parser.add_argument('--wandb_run_name', type=str, default='charBert', help='wandb run name')
     
     ## Required parameters
     parser.add_argument("--train_data_file", default=None, type=str, required=True,
@@ -828,12 +823,10 @@ def main():
     parser.add_argument('--server_port', type=str, default='', help="For distant debugging.")
     args = parser.parse_args()
 
-    if args.wandb_key:
-        wandb.login(key=args.wandb_key)
-        wandb.init(project=args.wandb_project, name=args.wandb_run_name, entity='developer-sidani')
+    wandb.login(key='13f6c62827c13afef515dd313fe5c67b1c1e1c65')
+    wandb.init(project='CharBERT', name=f'mlm_{args.output_dir.replace('/content/drive/MyDrive/NLP/output/','')}_{args.model_name_or_path.replace('/content/drive/MyDrive/NLP/output/','')}', entity='developer-sidani')
+
         
-    else:
-        print("No wandb key provided")
     if args.model_type in ["bert", "roberta", "distilbert", "camembert"] and not args.mlm:
         raise ValueError("BERT and RoBERTa do not have LM heads but masked LM heads. They must be run using the --mlm "
                          "flag (masked language modeling).")
@@ -892,8 +885,7 @@ def main():
                                         cache_dir=args.cache_dir if args.cache_dir else None)
     model.to(args.device)
     
-    if args.wandb_key:
-        wandb.watch(model)
+    wandb.watch(model)
 
 
     if args.local_rank == 0:
@@ -912,8 +904,7 @@ def main():
             torch.distributed.barrier()
 
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
-        if args.wandb_key:
-            wandb.log({'global_step': global_step, 'loss': tr_loss})
+        wandb.log({'global_step': global_step, 'loss': tr_loss})
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
 

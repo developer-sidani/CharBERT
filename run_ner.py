@@ -117,7 +117,7 @@ def train(args, train_dataset, model, tokenizer, labels, pad_token_label_id):
                     torch.distributed.get_world_size() if args.local_rank != -1 else 1))
     logger.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
     logger.info("  Total optimization steps = %d", t_total)
-
+    wandb.log({"Num examples": len(train_dataset), "Num Epochs": args.num_train_epochs, "Instantaneous batch size per GPU": args.per_gpu_train_batch_size, "Total train batch size": args.train_batch_size * args.gradient_accumulation_steps * (torch.distributed.get_world_size() if args.local_rank != -1 else 1), "Gradient Accumulation steps": args.gradient_accumulation_steps, "Total optimization steps": t_total})
     global_step = 0
     tr_loss, logging_loss = 0.0, 0.0
     model.zero_grad()
@@ -268,6 +268,7 @@ def evaluate(args, model, tokenizer, labels, pad_token_label_id, mode, prefix=""
     }
 
     logger.info("***** Eval results %s *****", prefix)
+    wandb.log({"loss": eval_loss, "precision": precision_score(out_label_list, preds_list), "recall": recall_score(out_label_list, preds_list), "f1": f1_score(out_label_list, preds_list)})
     for key in sorted(results.keys()):
         logger.info("  %s = %s", key, str(results[key]))
 
@@ -340,10 +341,6 @@ def main():
     parser.add_argument("--char_vocab", default='./data/dict/bert_char_vocab', type=str, required=True,
                         help="path for character vocab file")
     ## Wandb parameters
-
-    parser.add_argument('--wandb_key', type=str, default='', help='wandb key')
-    parser.add_argument('--wandb_project', type=str, default='charBert', help='wandb project')
-    parser.add_argument('--wandb_run_name', type=str, default='charBert', help='wandb run name')
     ## Other parameters
     parser.add_argument("--labels", default="", type=str,
                         help="Path to a file containing all labels. If not specified, CoNLL-2003 labels are used.")
@@ -448,11 +445,9 @@ def main():
 
     # Set seed
     set_seed(args)
-    if args.wandb_key:
-        wandb.login(key=args.wandb_key)
-        wandb.init(project=args.wandb_project, name=args.wandb_run_name, entity='developer-sidani')
-    else:
-        print("No wandb key provided")
+    wandb.login(key='13f6c62827c13afef515dd313fe5c67b1c1e1c65')
+    wandb.init(project='CharBERT', name=f'ner_{args.output_dir.replace('/content/drive/MyDrive/NLP/output/','')}_{args.model_name_or_path.replace('/content/drive/MyDrive/NLP/output/','')}', entity='developer-sidani')
+    
     # Prepare CONLL-2003 task
     labels = get_labels(args.labels)
     #print(f"the num_labels after get_labels: {len(labels)}")
@@ -483,8 +478,7 @@ def main():
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
     model.to(args.device)
-    if args.wandb_key:
-        wandb.watch(model)
+    wandb.watch(model)
 
     logger.info("Training/evaluation parameters %s", args)
 
