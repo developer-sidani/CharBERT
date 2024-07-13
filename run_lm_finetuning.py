@@ -187,8 +187,10 @@ class TextDataset(Dataset):
 
     def create_masked_lm_predictions(self, tokens, masked_lm_prob, tokenizer, rng, sub_index_to_change):
         """Creates the predictions for the masked LM objective."""
-       
-        vocab_words = list(tokenizer.vocab.keys())
+        if self.args.model_type == 'roberta':
+            vocab_words = list(tokenizer.encoder.keys())
+        else:
+            vocab_words = list(tokenizer.vocab.keys())
         cand_indexes = []
         for (i, token) in enumerate(tokens):
             if token == "[CLS]" or token == "[SEP]" or token == "[PAD]":
