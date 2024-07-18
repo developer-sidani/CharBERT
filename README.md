@@ -1,174 +1,83 @@
-<p align="center">
-  <br>
-    <img src="data/CharBert_logo.png" width="500" />  
-  <br>
-</p>
- 
-# CharBERT: Character-aware Pre-trained Language Model 
+### README.md
+# Exploring CharBERT
+```markdown
 
-This repository contains resources of the following [COLING 2020](https://www.coling2020.org) paper.  
-
-**Title: CharBERT: Character-aware Pre-trained Language Model**    
-Authors: Wentao Ma, Yiming Cui, Chenglei Si, Ting Liu, Shijin Wang, Guoping Hu   
-Link: [https://arxiv.org/abs/2011.01513](https://arxiv.org/abs/2011.01513)
-
-<img src="data/CharBert.png" width="75%">
-
-## Models
-We primarily provide two models. Here are the download links:   
-pre-trained CharBERT based on BERT [charbert-bert-wiki](https://drive.google.com/file/d/1rF5_LbA2qIHuehnNepGmjz4Mu6OqEzYT/view?usp=sharing)    
-pre-trained CharBERT based on RoBERTa [charbert-roberta-wiki](https://drive.google.com/file/d/1tkO7_EH1Px7tXRxNDu6lzr_y8b4Q709f/view?usp=sharing)   
-
-## Directory Guide
+This project explores the use of CharBERT by fine-tuning it on different pre-trained language models (PLMs) and applying named entity recognition (NER) on various versions of CharBERT across different datasets.
 ```
-root_directory
-    |- modeling    # contains source codes of CharBERT model part
-    |- data   # Character attack datasets and the dicts for CharBERT
-    |- processors # contains source codes for processing the datasets
-    |- shell     # the examples of shell script for training and evaluation
-    |- run_*.py  # codes for pre-training or finetuning
+## Overview
 
+CharBERT is a character-aware pre-trained language model designed to improve the performance of NLP tasks by incorporating character-level information. This project aims to:
+
+1. Fine-tune CharBERT on different PLMs.
+2. Evaluate CharBERT's performance on NER tasks.
+3. Compare results across different datasets and versions of CharBERT.
+
+## Installation
+Clone the repo:
+```bash
+!git clone https://github.com/developer-sidani/CharBERT.git
 ```
 
-## Requirements
-```
-Python 3.6  
-Pytorch 1.2
-Transformers 2.4.0
-```
+To run the notebook, you need to install the required dependencies. You can do this by running:
 
-## Performance
-
-### SQuAD
-| Model | 1.1 | 2.0 | 
-| :------- | :---------: | :---------: 
-| BERT  | 80.5 / 88.5 | 73.7 / 76.3 |
-| CharBERT  | 82.9 / 89.9 | 75.7 / 78.6 | 
-
-### Text Classification
-| Model | CoLA | MRPC | QQP | QNLI | 
-| :------- | :---------: | :---------:| :---------:| :---------: 
-| BERT  | 57.4 | 86.7 | 90.6 | 90.7 |
-| CharBERT  | 59.1 | 87.8 | 91.0 | 91.7 | 
-
-### Sequence Labeling
-| Model | NER | POS |  
-| :------- | :---------:| :---------: 
-| BERT  | 91.24 | 97.93 | 
-| CharBERT  | 91.81 | 98.05 | 
-
-## Robustness
-
-### Evaluation Datasets
-We conduct the robustness evaluation on adversarial misspellings followed [Pruthi et al.,2019](https://www.aclweb.org/anthology/P19-1561/).
-Those attacks include four kinds of character-level attack: dropping, adding, swapping, keyboard.
-For the evaluation tasks, we select SQuAD 2.0, CoNLL2003 NER, and QNLI.
-For example, the original example in QNLI:  
-```
-Question: What came into force after the new constitution was herald?
-Sentence: As of that day, the new constitution heralding the Second Republic came into force.
-Label: entailment
+```bash
+pip install -r requirements.txt
 ```
 
-After the attack, the example is:  
-```
-Question: What capme ino forxe afgter the new constitugion was herapd?
-Sentence: As of taht day, the new clnstitution herajlding the Sscond Republuc cae into forcte.
-Label: entailment
-```
-**Please check `data/attack_datasets` folder for these data.**
+## Datasets
 
-### Robustness Evaluation (original/attack)
+The following datasets are used in this project:
 
-| Model | QNLI | CoNLL2003 NER | SQuAD 2.0 | 
-| :------- | :---------: | :---------:| :---------:   
-| BERT  | 90.7/63.4 | 91.24/60.79 | 76.3/50.1 |  
-| CharBERT  | 91.7/80.1 | 91.81/76.14 | 78.6/56.3 |  
+- [CoNLL-2003](https://www.clips.uantwerpen.be/conll2003/ner/)
+- [AG News](https://arxiv.org/abs/1509.01626)
+- [WNUT 2017](https://noisy-text.github.io/2017/emerging-rare-entities.html)
+- [wikipedia simple](https://huggingface.co/datasets/legacy-datasets/wikipedia)
 
 ## Usage
-You may use another hyper-parameter set to adapt to your computing device, but it may require further tuning, especially `learning_rate` and `num_train_epoch.`
 
-### MLM && NLM Pre-training
-```
-DATA_DIR=YOUR_DATA_PATH
-MODEL_DIR=YOUR_MODEL_PATH/bert_base_cased #initialized by bert_base_cased model
-OUTPUT_DIR=YOUR_OUTUT_PATH/mlm
-python3 run_lm_finetuning.py \
-    --model_type bert \
-    --model_name_or_path ${MODEL_DIR} \
-    --do_train \
-    --do_eval \
-    --train_data_file $DATA_DIR/testdata/mlm_pretrain_enwiki.train.t \
-    --eval_data_file $DATA_DIR/testdata/mlm_pretrain_enwiki.test.t \
-    --term_vocab ${DATA_DIR}/dict/term_vocab \
-    --learning_rate 3e-5 \
-    --num_train_epochs 2 \
-    --mlm_probability 0.10 \
-    --input_nraws 1000 \
-    --per_gpu_train_batch_size 4 \
-    --per_gpu_eval_batch_size 4 \
-    --save_steps 10000 \
-    --block_size 384 \
-    --overwrite_output_dir \
-    --mlm \
-    --output_dir ${OUTPUT_DIR}
+The main steps to run the project are as follows:
 
-```
+1. **Data Preparation**: Load and preprocess the datasets.
+2. **Model Fine-tuning**: Fine-tune CharBERT on the selected PLMs.
+3. **NER Evaluation**: Apply CharBERT to NER tasks and evaluate performance.
+4. **Results Comparison**: Compare the performance across different datasets and CharBERT versions.
 
-### SQuAD
-```
-MODEL_DIR=YOUR_MODEL_PARH/charbert-bert-pretrain 
-SQUAD2_DIR=YOUR_DATA_PATH/squad 
-OUTPUT_DIR=YOUR_OUTPUT_PATH/squad 
-python run_squad.py \
-    --model_type bert \
-    --model_name_or_path ${MODEL_DIR} \
-    --do_train \
-    --do_eval \
-    --data_dir $SQUAD2_DIR \
-    --train_file $SQUAD2_DIR/train-v1.1.json \
-    --predict_file $SQUAD2_DIR/dev-v1.1.json \
-    --learning_rate 3e-5 \
-    --num_train_epochs 2 \
-    --per_gpu_train_batch_size 4 \
-    --per_gpu_eval_batch_size 4 \
-    --save_steps 2000 \
-    --max_seq_length 384 \
-    --overwrite_output_dir \
-    --doc_stride 128 \
-    --output_dir ${OUTPUT_DIR}
+### Running the Notebook
+
+To execute the notebook, follow these steps:
+
+ **Run the Jupyter Notebook**:
+   ```bash
+   jupyter notebook main_runner.ipynb
+   ```
+
+## Notebook Structure
+
+The `main_runner.ipynb` notebook is structured as follows:
+
+1. **Introduction**: Overview of the project and objectives.
+2. **Data Loading and Preprocessing**: Steps to load and preprocess the datasets.
+3. **Model Fine-tuning**: Instructions and code for fine-tuning CharBERT on different PLMs.
+4. **NER Task**: Applying CharBERT to NER tasks and evaluating performance.
+5. **Results and Analysis**: Comparing results across different datasets and CharBERT versions.
+6. **Conclusion**: Summary of findings and future work.
+
+## Results
+
+The results section includes performance metrics such as F1-score, precision, and recall for the NER tasks across different datasets and CharBERT versions. Detailed analysis and visualizations are provided to highlight the improvements and challenges.
+
+## References
+
+- [CharBERT: Character-aware Pre-trained Language Model](https://arxiv.org/abs/2011.01513)
+- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding](https://arxiv.org/abs/1810.04805)
+- [CoNLL-2003](https://www.clips.uantwerpen.be/conll2003/ner/)
+- [AG News Dataset](https://arxiv.org/abs/1509.01626)
+- [WNUT 2017](https://noisy-text.github.io/2017/emerging-rare-entities.html)
+
+## Acknowledgments
+
+We would like to thank the contributors and maintainers of the datasets and models used in this project.
+
 ```
 
-### NER
-```
-DATA_DIR=YOUR_DATA_PATH/CoNLL2003/NER-en
-MODEL_DIR=YOUR_MODEL_PATH/charbert-bert-wiki
-OUTPUT_DIR=YOUR_OUTPUT_PATH/ner
-python run_ner.py --data_dir ${DATA_DIR} \
-                  --model_type bert \
-                  --model_name_or_path $MODEL_DIR \
-                  --output_dir ${OUTPUT_DIR} \
-                  --num_train_epochs 3 \
-                  --learning_rate 3e-5 \
-                  --char_vocab ./data/dict/bert_char_vocab \
-                  --per_gpu_train_batch_size 6 \
-                  --do_train \
-                  --do_predict \
-                  --overwrite_output_dir
-```
-
-## Citation
-If you use the data or codes in this repository, please cite our paper.
-```
-@misc{ma2020charbert,
-      title={CharBERT: Character-aware Pre-trained Language Model}, 
-      author={Wentao Ma and Yiming Cui and Chenglei Si and Ting Liu and Shijin Wang and Guoping Hu},
-      year={2020},
-      eprint={2011.01513},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL}
-}
-```
-
-## Issues
-If there is any problem, please submit a GitHub Issue.
+This template includes sections for an overview, installation instructions, usage guidelines, notebook structure, results, references, license, and acknowledgments. Make sure to adjust the content to match the specifics of your project and notebook.
